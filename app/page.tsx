@@ -1,18 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { setToken } from '@/redux/auth/auth.slice';
+import { setToken, setUser } from '@/redux/auth/auth.slice';
 import useAuthSession from '../hooks/useAuthSession';
 import { useAppDispatch } from '@/redux/store';
+import axios from 'axios';
+
 
 const HomePage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useAppDispatch();
-  const user = useAuthSession();
+  const{ user} = useAuthSession();
+  
 
   const handleLogin = async () => {
     // Implement the logic to authenticate the user
+    try {
+      const response = await axios.post('/api/auth/login', { username, password });
+      const { token } = response.data;
+      dispatch(setToken(token));
+      const userResponse = await axios.get('/api/auth/user', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      dispatch(setUser({ username: userResponse.data.username }));
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Invalid credentials');
+    }
   };
 
   return (
@@ -47,17 +62,7 @@ const HomePage = () => {
             </button>
           </div>
         )}
-        <div className="mt-6 p-4 border rounded-md text-black bg-gray-50">
-          <h3 className="text-lg font-semibold">The hook should be usable like this: </h3>
-          <pre className="mt-2 p-2 text-gray-500 bg-gray-100 rounded-md">
-            <code>
-              {`const { user } = useAuthSession();
-if (user) {
-  console.log('User:', user.username);
-}`}
-            </code>
-          </pre>
-        </div>
+       
       </div>
     </div>
   );
